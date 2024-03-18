@@ -8,23 +8,33 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Doctrine\ORM\Mapping\HasLifecycleCallbacks;
+use Symfony\Component\Validator\Constraints as Assert;
+use JsonSerializable;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
+
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[HasLifecycleCallbacks]
+#[UniqueEntity('email', message: 'The email "{{ value }}" is already used')]
 #[ORM\Table(name: '`user`')]
-class User
+class User implements JsonSerializable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Assert\NotBlank(message: '"username" is required')]
+    #[Assert\Length(min: 3, minMessage: '"username" must be at least 3 characters')]
     #[ORM\Column(length: 255)]
     private ?string $username = null;
 
-    #[ORM\Column(length: 255)]
+    #[Assert\Email(message: '"email" is not valid')]
+    #[Assert\NotBlank(message: '"email" is required')]
+    #[ORM\Column(length: 255, unique: true)]
     private ?string $email = null;
 
+    #[Assert\NotBlank(message: '"password" is required')]
     #[ORM\Column(length: 255)]
     private ?string $password = null;
 
@@ -132,7 +142,7 @@ class User
     {
         if (!$this->tasks->contains($task)) {
             $this->tasks->add($task);
-            $task->setUserId($this);
+            $task->setUser($this);
         }
 
         return $this;
@@ -142,11 +152,20 @@ class User
     {
         if ($this->tasks->removeElement($task)) {
             // set the owning side to null (unless already changed)
-            if ($task->getUserId() === $this) {
-                $task->setUserId(null);
+            if ($task->getUser() === $this) {
+                $task->setUser(null);
             }
         }
 
         return $this;
+    }
+
+    public function jsonSerialize()
+    {
+        return [
+            'id' => $this->getId(),
+            'username' => $this->getUsername(),
+            'email' => $this->getEmail(),
+        ];
     }
 }
