@@ -118,11 +118,11 @@ class TaskController extends AbstractController
             return new JsonResponse(['error' => 'Task not found'], JsonResponse::HTTP_NOT_FOUND);
         }
 
-        $this->taskRepository->remove($task);
+        $this->taskRepository->remove($task, true);
         return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
     }
 
-    private function validate(Task $taks) : Array
+    private function validate(Task $taks) : array
     {
         $errors = $this->validator->validate($taks);
         $error_messages = [];
@@ -135,5 +135,4 @@ class TaskController extends AbstractController
 
         return $error_messages;
     }
-
 }
